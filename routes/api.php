@@ -42,4 +42,8 @@ Route::middleware(['verify.external.service.api.key'])->group(function () {
     });
 });
 
+Route::get('/ping', function () {
+    return response()->json(['message' => 'pong']);
+});
+
 
