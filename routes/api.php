@@ -21,7 +21,10 @@ Route::middleware(['verify.fedresurs.api.key'])->group(function () {
         Route::post('/messages', [EfrsbMessageApiController::class, 'storeMessages'])->name('api.efrsb-message.messages');
         Route::post('/message-body', [EfrsbMessageApiController::class, 'storeMessageBody'])->name('api.efrsb-message.message-body');
     });
+});
 
+// Роуты для debtor_updater
+Route::middleware(['verify.debtor.updater.api.key'])->group(function () {
     // Управление сервисами парсера по API (без домена/админки)
     Route::prefix('parser-services')->group(function () {
         Route::get('/', [ParserServiceApiController::class, 'index'])->name('api.parser-services.index');

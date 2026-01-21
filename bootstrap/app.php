@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'verify.fedresurs.api.key' => \App\Http\Middleware\VerifyFedresursIncomingApiKey::class,
             'verify.external.service.api.key' => \App\Http\Middleware\VerifyExternalServiceApiKey::class,
+            'verify.debtor.updater.api.key' => \App\Http\Middleware\VerifyDebtorUpdaterApiKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
