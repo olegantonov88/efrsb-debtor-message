@@ -16,7 +16,11 @@ class VerifyFedresursIncomingApiKey
     {
         $apiKey = $request->header('Authorization');
 
-        if ($apiKey !== 'Bearer ' . config('services.fedresurs_message_list.incoming_api_key')) {
+        // Убираем префикс 'Bearer ' если он есть
+        $cleanApiKey = $apiKey ? preg_replace('/^Bearer\s+/i', '', $apiKey) : null;
+        $expectedKey = config('services.fedresurs_message_list.incoming_api_key');
+
+        if ($cleanApiKey !== $expectedKey) {
             // Если неверный API-ключ, но при этом пришёл callback по задачам/состоянию сервиса,
             // всё равно помечаем связанные сущности как ошибочные.
             $routeName = optional($request->route())->getName();
