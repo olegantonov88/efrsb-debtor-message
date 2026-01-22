@@ -10,17 +10,12 @@ use App\Http\Controllers\Api\ParserServiceStateApiController;
 use App\Http\Controllers\Api\TaskStatusApiController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['verify.fedresurs.api.key'])->group(function () {
-    Route::post('/debtors/update-data', [DebtorApiController::class, 'updateData'])->name('api.debtors.update-data');
-    Route::post('/debtors/latest-task-debtor-messages', [DebtorApiController::class, 'latestTaskDebtorMessages'])->name('api.debtors.latest-task-debtor-messages');
-
-    Route::prefix('efrsb-message')->group(function () {
-        Route::post('/task-status', [FedresursTaskStatusApiController::class, 'store'])->name('api.fedresurs.task-status');
-        Route::post('/service-state', [ParserServiceStateApiController::class, 'store'])->name('api.efrsb-message.service-state');
-        Route::post('/debtor-uuid', [FedresursApiController::class, 'updateDebtorUuid'])->name('api.fedresurs.debtor-uuid');
-        Route::post('/messages', [EfrsbMessageApiController::class, 'storeMessages'])->name('api.efrsb-message.messages');
-        Route::post('/message-body', [EfrsbMessageApiController::class, 'storeMessageBody'])->name('api.efrsb-message.message-body');
-    });
+Route::middleware(['verify.fedresurs.api.key'])->prefix('efrsb-message')->group(function () {
+    Route::post('/task-status', [FedresursTaskStatusApiController::class, 'store'])->name('api.fedresurs.task-status');
+    Route::post('/service-state', [ParserServiceStateApiController::class, 'store'])->name('api.efrsb-message.service-state');
+    Route::post('/debtor-uuid', [FedresursApiController::class, 'updateDebtorUuid'])->name('api.fedresurs.debtor-uuid');
+    Route::post('/messages', [EfrsbMessageApiController::class, 'storeMessages'])->name('api.efrsb-message.messages');
+    Route::post('/message-body', [EfrsbMessageApiController::class, 'storeMessageBody'])->name('api.efrsb-message.message-body');
 });
 
 // Роуты для debtor_updater
@@ -39,6 +34,9 @@ Route::middleware(['verify.debtor.updater.api.key'])->group(function () {
 
 // Роуты для внешних сервисов (debtor_updater и meeting_application)
 Route::middleware(['verify.external.service.api.key'])->group(function () {
+    Route::post('/debtors/update-data', [DebtorApiController::class, 'updateData'])->name('api.debtors.update-data');
+    Route::post('/debtors/latest-task-debtor-messages', [DebtorApiController::class, 'latestTaskDebtorMessages'])->name('api.debtors.latest-task-debtor-messages');
+
     Route::prefix('fedresurs')->group(function () {
         Route::post('/enqueue/debtor-messages', [FedresursTaskApiController::class, 'enqueueDebtorMessages'])->name('api.fedresurs.enqueue.debtor-messages');
         Route::post('/enqueue/message-tables', [FedresursTaskApiController::class, 'enqueueMessageTables'])->name('api.fedresurs.enqueue.message-tables');
@@ -48,5 +46,3 @@ Route::middleware(['verify.external.service.api.key'])->group(function () {
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong']);
 });
-
-
