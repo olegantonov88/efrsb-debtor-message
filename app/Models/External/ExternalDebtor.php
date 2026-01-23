@@ -47,12 +47,12 @@ class ExternalDebtor extends ExternalModel
     ];
 
     /**
-     * efrsb_id хранится во внешней таблице в JSON поле properties.
+     * efrsb_message_id хранится во внешней таблице в JSON поле properties.
      */
     public function getEfrsbId(): ?string
     {
         $props = $this->properties;
-        $efrsbId = $props?->efrsb_id ?? null;
+        $efrsbId = $props?->efrsb_message_id ?? null;
 
         return is_string($efrsbId) && $efrsbId !== '' ? $efrsbId : null;
     }
@@ -80,7 +80,7 @@ class ExternalDebtor extends ExternalModel
             $props = PropertiesDebtorObject::fromArray([]);
         }
 
-        $props->efrsb_id = $efrsbId;
+        $props->efrsb_message_id = $efrsbId;
         $this->properties = $props;
     }
 }
