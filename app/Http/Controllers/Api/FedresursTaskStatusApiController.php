@@ -25,7 +25,7 @@ class FedresursTaskStatusApiController extends Controller
             $task->update([
                 'ok' => $ok,
                 'callback_task_type' => (string) $data['task_type'],
-                'callback_debtor_id' => (int) $data['debtor_id'],
+                'callback_debtor_id' => isset($data['debtor_id']) ? (int) $data['debtor_id'] : null,
                 'start_ip' => $data['start_ip'] ?? null,
                 'end_ip' => $data['end_ip'] ?? null,
                 'callback_error' => $data['error'] ?? null,
@@ -38,7 +38,8 @@ class FedresursTaskStatusApiController extends Controller
         $parseJob = ParseJob::query()->where('public_id', $jobId)->first();
         if ($parseJob) {
             $parseJob->update([
-                'debtor_id' => (int) $data['debtor_id'],
+                // Без debtor_id (message_tables) оставляем должника, с которым задачу поставили
+                'debtor_id' => isset($data['debtor_id']) ? (int) $data['debtor_id'] : $parseJob->debtor_id,
                 'payload' => [
                     ...($parseJob->payload ?? []),
                     'task_status' => $data,

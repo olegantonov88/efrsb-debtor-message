@@ -29,7 +29,8 @@ class FedresursTaskStatusRequest extends FormRequest
             'end_ip' => ['nullable', 'ip'],
             'error' => ['nullable', 'string'],
             'stats' => ['nullable', 'array'],
-            'debtor_id' => ['required', 'integer', 'min:1'],
+            // message_tables не привязана к одному должнику, воркер шлёт null
+            'debtor_id' => ['required_unless:task_type,message_tables', 'nullable', 'integer', 'min:1'],
         ];
     }
 }

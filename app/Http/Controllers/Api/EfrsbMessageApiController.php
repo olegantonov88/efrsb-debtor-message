@@ -125,7 +125,7 @@ class EfrsbMessageApiController extends Controller
 
 
             // Задачу запустил пользователь CRM - сразу сообщаем странице про это сообщение.
-            // Завершения всей задачи не ждём: task-status для message_tables не приходит
+            // Завершения всей задачи не ждём: task-status для message_tables придёт только после всей пачки
             if ($parseJob && $parseJob->user_id) {
                 try {
                     event(new EfrsbDebtorMessageBodyStored(
