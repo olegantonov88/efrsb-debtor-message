@@ -41,7 +41,10 @@ class DebtorApiController extends Controller
     {
         $data = $request->validated();
 
-        $job = ParseJob::where('debtor_id', (int) $data['debtor_id'])->orderBy('created_at', 'desc')->first();
+        $job = ParseJob::where('debtor_id', (int) $data['debtor_id'])
+            ->when(!empty($data['type']), fn ($query) => $query->where('type', $data['type']))
+            ->orderBy('created_at', 'desc')
+            ->first();
 
         return response()->json([
             'success' => true,

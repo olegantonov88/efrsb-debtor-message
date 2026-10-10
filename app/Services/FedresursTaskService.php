@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ParseJob\ParseJobType;
 use App\Enums\ParseJob\StatusParseJob;
 use App\Models\External\ExternalDebtor;
 use App\Models\External\ExternalEfrsbDebtorMessage;
@@ -83,7 +84,58 @@ class FedresursTaskService
 
         $this->publishNow($task, $parseJob);
 
+        // Отметка для CRM: данные запрошены, повторно кнопкой не запрашивать, пока не придут или не истечёт порог.
+        // Сюда приходят все запросы: автоматом после списка, кнопкой в CRM и из meeting-application
+        ExternalEfrsbDebtorMessage::query()
+            ->whereIn('id', array_map(fn ($message) => (int) $message['message_id'], $messages))
+            ->update(['body_requested_at' => now()]);
+
         return $task;
+    }
+
+    /**
+     * C) тексты сообщений должника, которых ещё нет, после обновления списка
+     *
+     * Пачками: одна задача на пачку, чтобы событие о завершении с перечнем сообщений
+     * укладывалось в лимит Pusher (10 КБ)
+     *
+     * @return int сколько задач поставлено
+     */
+    public function enqueueMissingMessageBodies(ParseJob $debtorMessagesJob, int $chunkSize = 20): int
+    {
+        $messages = ExternalEfrsbDebtorMessage::query()
+            ->where('debtor_id', (int) $debtorMessagesJob->debtor_id)
+            ->whereNull('body_format')
+            ->whereNull('body_html')
+            ->orderByDesc('publish_date')
+            ->get(['id', 'uuid']);
+
+        if ($messages->isEmpty()) {
+            return 0;
+        }
+
+        $proxy = $debtorMessagesJob->payload['payload']['proxy'] ?? ['use_proxy' => false, 'url' => null];
+
+        $count = 0;
+        foreach ($messages->chunk($chunkSize) as $chunk) {
+            $parseJob = ParseJob::create([
+                'debtor_id' => (int) $debtorMessagesJob->debtor_id,
+                'type' => ParseJobType::MessageTables,
+                'payload' => [],
+                'user_id' => $debtorMessagesJob->user_id,
+                'notify' => $debtorMessagesJob->notify,
+            ]);
+            $parseJob->updateStatus(StatusParseJob::CREATED);
+
+            $this->enqueueMessageTablesTask($parseJob, $chunk->map(fn ($message) => [
+                'message_id' => (int) $message->id,
+                'message_uuid' => (string) $message->uuid,
+            ])->values()->all(), $proxy);
+
+            $count++;
+        }
+
+        return $count;
     }
 
     private function publishNow(FedresursTask $task, ParseJob $parseJob): void

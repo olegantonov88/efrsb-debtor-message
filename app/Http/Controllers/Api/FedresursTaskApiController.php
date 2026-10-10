@@ -32,6 +32,7 @@ class FedresursTaskApiController extends Controller
             'type' => ParseJobType::DebtorMessages,
             'payload' => [],
             'user_id' => $userId,
+            'notify' => (bool) ($data['notify'] ?? true),
         ]);
         $parseJob->updateStatus(StatusParseJob::CREATED);
 

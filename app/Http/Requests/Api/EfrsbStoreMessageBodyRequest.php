@@ -19,7 +19,9 @@ class EfrsbStoreMessageBodyRequest extends FormRequest
             'message_uuid' => ['required', 'string', 'max:100'],
             'message_number' => ['nullable', 'string', 'max:500'],
             'title' => ['required', 'string', 'max:500'],
-            'body_html_base64' => ['required', 'string'],
+            // Новый воркер присылает JSON, старый - HTML. Принимаем оба на время перехода
+            'body_json_base64' => ['required_without:body_html_base64', 'nullable', 'string'],
+            'body_html_base64' => ['required_without:body_json_base64', 'nullable', 'string'],
             'meeting_application_id' => ['nullable', 'integer', 'min:1'],
         ];
     }

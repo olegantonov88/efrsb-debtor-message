@@ -7,6 +7,7 @@ use App\Enums\ParseJob\ParseJobType;
 use App\Enums\ParseJob\StatusParseJob;
 use App\Events\ParseJobStatusNotification;
 use App\Events\ParseJobStatusUpdated;
+use App\Models\External\ExternalEfrsbDebtorMessage;
 use App\ValueObjects\ParseJob\StatusesParseJobObject;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,6 +22,7 @@ class ParseJob extends Model
         'latest_status' => StatusParseJob::class,
         'statuses' => StatusesParseJobCast::class,
         'payload' => 'array',
+        'notify' => 'boolean',
     ];
 
     protected static function booted(): void
@@ -58,21 +60,45 @@ class ParseJob extends Model
                 ? 'Сведения о публикации сообщений на ЕФРСБ обновлены'
                 : 'Не удалось обновить сведения о публикации сообщений на ЕФРСБ';
 
+            // После списка воркер сам запускает получение данных сообщений (FedresursTaskService::enqueueMissingMessageBodies)
+            if ($statusEnum === StatusParseJob::SUCCESS && $this->type === ParseJobType::DebtorMessages) {
+                $title = 'Список сообщений получен';
+                $message = $this->hasMessagesWithoutBody()
+                    ? 'Список сообщений ЕФРСБ получен. Дождитесь получения данных сообщений'
+                    : 'Список сообщений ЕФРСБ получен';
+            }
+
             // Отправляем данные задачи для обновления на странице
             event(new ParseJobStatusUpdated(
                 userId: $this->user_id,
                 parseJob: $this->fresh()
             ));
 
-            // Отправляем уведомление пользователю
-            event(new ParseJobStatusNotification(
-                userId: $this->user_id,
-                title: $title,
-                message: $message,
-                type: $statusEnum === StatusParseJob::SUCCESS ? 'success' : 'error',
-                life: 6000
-            ));
+            // Отправляем уведомление пользователю. Тексты сообщений идут пачками, по уведомлению на каждую
+            // засыпали бы пользователя, страница и так узнаёт о них из события выше
+            // Тихий запуск (notify = false) тоже без уведомления, только событие для страницы
+            if ($this->type !== ParseJobType::MessageTables && $this->notify !== false) {
+                event(new ParseJobStatusNotification(
+                    userId: $this->user_id,
+                    title: $title,
+                    message: $message,
+                    type: $statusEnum === StatusParseJob::SUCCESS ? 'success' : 'error',
+                    life: 6000
+                ));
+            }
         }
+    }
+
+    /**
+     * Есть ли у должника сообщения, данные которых ещё не получены
+     */
+    private function hasMessagesWithoutBody(): bool
+    {
+        return ExternalEfrsbDebtorMessage::query()
+            ->where('debtor_id', (int) $this->debtor_id)
+            ->whereNull('body_format')
+            ->whereNull('body_html')
+            ->exists();
     }
 
     public function fedresursTasks(): HasMany

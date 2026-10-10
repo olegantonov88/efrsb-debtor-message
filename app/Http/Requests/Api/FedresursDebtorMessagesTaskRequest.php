@@ -15,6 +15,8 @@ class FedresursDebtorMessagesTaskRequest extends FormRequest
     {
         return [
             'user_id' => ['nullable', 'integer', 'min:1'],
+            // false - тихий запуск: без всплывающего уведомления пользователю
+            'notify' => ['nullable', 'boolean'],
             'debtor_id' => ['required', 'integer', 'min:1'],
             'proxy' => ['nullable', 'array'],
             'proxy.use_proxy' => ['nullable', 'boolean'],
